@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<IWalkerRepository, WalkerRepository>();
 builder.Services.AddTransient<IOwnerRepository, OwnerRepository>();
+builder.Services.AddTransient<INeighborhoodRepository, NeighborhoodRepository>();
+builder.Services.AddTransient<IDogRepository, DogRepository>();
 
 var app = builder.Build();
 

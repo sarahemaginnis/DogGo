@@ -1,4 +1,4 @@
-﻿@model IEnumerable<DogGo.Models.Walker>
+﻿@model IEnumerable<DogGo.Models.Neighborhood>
 
 @{
     ViewData["Title"] = "Index";
@@ -18,12 +18,6 @@
             <th>
                 @Html.DisplayNameFor(model => model.Name)
             </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Neighborhood)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ImageUrl)
-            </th>
             <th></th>
         </tr>
     </thead>
@@ -35,12 +29,6 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Neighborhood.Name)
-            </td>
-            <td>
-                <img src="@item.ImageUrl" alt="avatar" />
             </td>
             <td>
                 @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |

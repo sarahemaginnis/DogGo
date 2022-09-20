@@ -8,5 +8,6 @@ namespace DogGo.Repositories
     {
         List<Dog> GetAllDogs();
         Dog GetDogById(int id);
+        List<Dog> GetDogsByOwnerId(int id);
     }
 }

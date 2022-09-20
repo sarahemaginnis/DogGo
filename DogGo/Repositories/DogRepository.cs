@@ -3,34 +3,34 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 
-namespace DogGo.Repositories
+namespace DogGo.Repositories;
+
+public class DogRepository : IDogRepository
 {
-    public class DogRepository : IDogRepository
+    private readonly IConfiguration _config;
+
+    //The constructor accepts an IConfiguration object as a parameter. This class comes from the ASP.NET framework and is useful for retrieving things out of the appsettings.json file like connection strings.
+    public DogRepository(IConfiguration config)
     {
-        private readonly IConfiguration _config;
+        _config = config;
+    }
 
-        //The constructor accepts an IConfiguration object as a parameter. This class comes from the ASP.NET framework and is useful for retrieving things out of the appsettings.json file like connection strings.
-        public DogRepository(IConfiguration config)
+    public SqlConnection Connection
+    {
+        get
         {
-            _config = config;
+            return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
         }
+    }
 
-        public SqlConnection Connection
+    public List<Dog> GetAllDogs()
+    {
+        using (SqlConnection conn = Connection)
         {
-            get
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
             {
-                return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-            }
-        }
-
-        public List<Dog> GetAllDogs()
-        {
-            using (SqlConnection conn = Connection)
-            {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"
+                cmd.CommandText = @"
                         SELECT Id,
                                 [Name],
                                 OwnerId,
@@ -39,37 +39,77 @@ namespace DogGo.Repositories
                                 ISNULL(ImageUrl, '') AS ImageUrl
                         FROM Dog
                     ";
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    List<Dog> dogs = new List<Dog>();
+                    while (reader.Read())
                     {
-                        List<Dog> dogs = new List<Dog>();
-                        while (reader.Read())
+                        Dog dog = new Dog
                         {
-                            Dog dog = new Dog
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Name")),
-                                OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
-                                Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                                Notes = reader.GetString(reader.GetOrdinal("Notes")),
-                                ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
-                            };
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
+                        };
 
-                            dogs.Add(dog);
-                        }
-                        return dogs;
+                        dogs.Add(dog);
                     }
+                    return dogs;
                 }
             }
         }
+    }
 
-        public Dog GetDogById(int id)
+    public List<Dog> GetDogsByOwnerId(int id)
+    {
+        using (SqlConnection conn = Connection)
         {
-            using (SqlConnection conn = Connection)
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
             {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
+                cmd.CommandText = @"
+                        SELECT Id,
+                                [Name],
+                                OwnerId,
+                                Breed,
+                                ISNULL(Notes, '') AS Notes,
+                                ISNULL(ImageUrl, '') AS ImageUrl
+                        FROM Dog
+                        WHERE OwnerId = @id
+                    ";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.CommandText = @"
+                    List<Dog> results = new();
+                    while (reader.Read())
+                    {
+                        Dog dog = new Dog
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
+                        };
+                        results.Add(dog);
+                    }
+                    return results;
+                }
+            }
+        }
+    }
+    
+    public Dog GetDogById(int id)
+    {
+        using (SqlConnection conn = Connection)
+        {
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
                         SELECT Id,
                                 [Name],
                                 OwnerId,
@@ -79,25 +119,24 @@ namespace DogGo.Repositories
                         FROM Dog
                         WHERE Id = @id
                     ";
-                    cmd.Parameters.AddWithValue("@id", id);
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                cmd.Parameters.AddWithValue("@id", id);
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
                     {
-                        if (reader.Read())
+                        Dog dog = new Dog
                         {
-                            Dog dog = new Dog
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Name")),
-                                OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
-                                Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                                Notes = reader.GetString(reader.GetOrdinal("Notes")),
-                                ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
-                            };
-                            return dog;
-                        } else
-                        {
-                            return null;
-                        }
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
+                        };
+                        return dog;
+                    } else
+                    {
+                        return null;
                     }
                 }
             }

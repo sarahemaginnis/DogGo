@@ -77,23 +77,29 @@ public class DogRepository : IDogRepository
                                 ISNULL(Notes, '') AS Notes,
                                 ISNULL(ImageUrl, '') AS ImageUrl
                         FROM Dog
-                        WHERE OwnerId = @OwnerId
+                        WHERE OwnerId = @ownerId
                     ";
-                cmd.Parameters.AddWithValue("@OwnerId", ownerId);
+                cmd.Parameters.AddWithValue("@ownerId", ownerId);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     List<Dog> results = new();
                     while (reader.Read())
                     {
-                        Dog dog = new Dog
+                        Dog dog = new Dog()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
                             Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
-                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
                         };
+                        if (reader.IsDBNull(reader.GetOrdinal("Notes")) == false)
+                        {
+                            dog.Notes = reader.GetString(reader.GetOrdinal("Notes"));
+                        }
+                        if (reader.IsDBNull(reader.GetOrdinal("ImageUrl")) == false)
+                        {
+                            dog.ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"));
+                        }
                         results.Add(dog);
                     }
                     return results;

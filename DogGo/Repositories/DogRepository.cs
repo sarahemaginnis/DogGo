@@ -62,7 +62,7 @@ public class DogRepository : IDogRepository
         }
     }
 
-    public List<Dog> GetDogsByOwnerId(int id)
+    public List<Dog> GetDogsByOwnerId(int ownerId)
     {
         using (SqlConnection conn = Connection)
         {
@@ -77,9 +77,9 @@ public class DogRepository : IDogRepository
                                 ISNULL(Notes, '') AS Notes,
                                 ISNULL(ImageUrl, '') AS ImageUrl
                         FROM Dog
-                        WHERE OwnerId = @id
+                        WHERE OwnerId = @OwnerId
                     ";
-                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@OwnerId", ownerId);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     List<Dog> results = new();
@@ -119,7 +119,7 @@ public class DogRepository : IDogRepository
                         FROM Dog
                         WHERE Id = @id
                     ";
-                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@Id", id);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -139,6 +139,81 @@ public class DogRepository : IDogRepository
                         return null;
                     }
                 }
+            }
+        }
+    }
+
+    public void AddDog(Dog dog)
+    {
+        using (SqlConnection conn = Connection)
+        {
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"INSERT INTO Dog (
+                        [Name],
+                        OwnerId,
+                        Breed,
+                        Notes,
+                        ImageUrl)
+                    OUTPUT INSERTED.ID
+                    VALUES (
+                        @Name, 
+                        @OwnerId,
+                        @Breed,
+                        @Notes,
+                        @ImageUrl)";
+                cmd.Parameters.AddWithValue("@Name", dog.Name);
+                cmd.Parameters.AddWithValue("@OwnerId", dog.OwnerId);
+                cmd.Parameters.AddWithValue("@Breed", dog.Breed);
+                cmd.Parameters.AddWithValue("@Notes", dog.Notes);
+                cmd.Parameters.AddWithValue("@ImageUrl", dog.ImageUrl);
+
+                int id = (int)cmd.ExecuteScalar();
+                dog.Id = id;
+            }
+        }
+    }
+
+    public void UpdateDog(Dog dog)
+    {
+        using (SqlConnection conn = Connection)
+        {
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"UPDATE Dog
+                    SET
+                        [Name] = @Name,
+                        OwnerId = @OwnerId,
+                        Breed = @Breed,
+                        Notes = @Notes,
+                        ImageUrl = @ImageUrl
+                        WHERE ID = @Id
+                ";
+                cmd.Parameters.AddWithValue("@Name", dog.Name);
+                cmd.Parameters.AddWithValue("@OwnerId", dog.OwnerId);
+                cmd.Parameters.AddWithValue("@Breed", dog.Breed);
+                cmd.Parameters.AddWithValue("@Notes", dog.Notes);
+                cmd.Parameters.AddWithValue("@ImageUrl", dog.ImageUrl);
+                cmd.Parameters.AddWithValue("@Id", dog.Id);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+    }
+
+    public void DeleteDog(int id)
+    {
+        using (SqlConnection conn = Connection)
+        {
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"DELETE FROM Dog
+                    WHERE Id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.ExecuteNonQuery();
             }
         }
     }

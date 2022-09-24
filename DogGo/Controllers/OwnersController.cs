@@ -11,12 +11,18 @@ namespace DogGo.Controllers
         private readonly IOwnerRepository _ownerRepo;
         private readonly IDogRepository _dogRepo;
         private readonly IWalkerRepository _walkerRepo;
+        private readonly INeighborhoodRepository _neighborhoodRepo;
         //ASP.NET will give us an instance of our Owner Repository. This is called "Dependency Injection"
-        public OwnersController(IOwnerRepository ownerRepo, IDogRepository dogRepo, IWalkerRepository walkerRepo)
+        public OwnersController(
+            IOwnerRepository ownerRepo, 
+            IDogRepository dogRepo, 
+            IWalkerRepository walkerRepo, 
+            INeighborhoodRepository neighborhoodRepo)
         {
             _ownerRepo = ownerRepo;
             _dogRepo = dogRepo;
             _walkerRepo = walkerRepo;
+            _neighborhoodRepo = neighborhoodRepo;
         }
         // GET: OwnersController
         public ActionResult Index()
@@ -44,7 +50,13 @@ namespace DogGo.Controllers
         // GET: OwnersController/Create
         public ActionResult Create()
         {
-            return View();
+            List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAllNeighborhoods();
+            OwnerFormViewModel vm = new OwnerFormViewModel()
+            {
+                Owner = new Owner(),
+                Neighborhoods = neighborhoods
+            };
+            return View(vm);
         }
 
         // POST: OwnersController/Create
@@ -66,12 +78,16 @@ namespace DogGo.Controllers
         // GET: OwnersController/Edit/5
         public ActionResult Edit(int id)
         {
-            Owner owner = _ownerRepo.GetOwnerById(id);
-            if (owner == null)
+            OwnerFormViewModel vm = new OwnerFormViewModel()
+            {
+                Owner = _ownerRepo.GetOwnerById(id),
+                Neighborhoods = _neighborhoodRepo.GetAllNeighborhoods(),
+            };
+            if (vm.Owner == null)
             {
                 return NotFound();
             }
-            return View(owner);
+            return View(vm);
         }
 
         // POST: OwnersController/Edit/5
